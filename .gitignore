@@ -133,3 +133,4 @@ outputs/
 
 # datasets
 FashionMNIST/
+07_distributed_training/lfw-deepfunneled/
