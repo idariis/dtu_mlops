@@ -45,6 +45,8 @@ if __name__ == '__main__':
     dataset = LFWDataset(args.path_to_folder, lfw_trans)
     
     # Define dataloader
+    # Note we need a high batch size to see an effect of using many
+    # number of workers
     dataloader = DataLoader(dataset, batch_size=512, shuffle=False,
                             num_workers=args.num_workers)
 
@@ -66,7 +68,7 @@ if __name__ == '__main__':
                 if batch_idx > 100:
                     break
             end = time.time()
-            
+
             res.append(end - start)
             
         res = np.array(res)
