@@ -5,7 +5,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.model_selection import KFold, ParameterGrid, train_test_split
 
 np.random.seed(123)
-OPTUNA = False
+OPTUNA = True
 
 data = datasets.load_digits()
 X,y = data['data'], data['target']
@@ -62,10 +62,37 @@ else:
     def objective(trial):
         # fill in this. Given a trial it should
         # 1. suggest a set of hyperparameters (HINT: use trial.suggest_discrete_uniform )
-        # 2. train a random forest using the hyperparameters
+        splits = trial.suggest_int('splits', 2, 8, 1)
+        # 2. train a random forest using the hyperparameters            
+        kf = KFold(n_splits=splits)
+        N_ESTIMATORS = [1, 5, 10, 20, 50, 100, 200]
+        MAX_DEPTH = [1, 5, 10, 20, 100]
+        
+        # we are going to do a full grid search
+        params = ParameterGrid({'n_estimators': N_ESTIMATORS, 'max_depth': MAX_DEPTH})
+        
+        scores = []
+        for p in params:
+            c = RandomForestClassifier(**p)
+            scores.append([])
+            for train_index, val_index in kf.split(X_train):
+                x_t, x_v = X_train[train_index], X_train[val_index]
+                y_t, y_v = y_train[train_index], y_train[val_index]
+            
+                c.fit(x_t, y_t)
+                
+                preds = c.predict(x_v)
+            
+                acc = accuracy_score(y_v, preds)
+            
+                scores[-1].append(acc)
+    
+        scores_mean = [np.mean(s) for s in scores]
+        val_acc = np.argmax(scores_mean)
+
         # 3. evaluate the trained random forest
         return val_acc
     
     # call the optimizer
-    study = optuna.create_study()
-    study.optimize(objective, n_trials=100) 
+    study = optuna.create_study(study_name="Optuna day 9", direction="maximize")
+    study.optimize(objective, n_trials=10) 

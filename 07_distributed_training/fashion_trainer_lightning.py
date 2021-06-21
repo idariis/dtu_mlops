@@ -3,6 +3,7 @@ Credit to: https://www.kaggle.com/pankajj/fashion-mnist-with-pytorch-93-accuracy
 """
 import torch
 import torch.nn as nn
+import torchmetrics
 
 from torchvision.datasets import FashionMNIST
 import torchvision.transforms as transforms
@@ -34,6 +35,8 @@ class FashionCNN(pl.LightningModule):
         self.drop = nn.Dropout2d(0.25)
         self.fc2 = nn.Linear(in_features=600, out_features=120)
         self.fc3 = nn.Linear(in_features=120, out_features=10)
+
+        self.accuracy = torchmetrics.Accuracy()
         
     def forward(self, x):
         out = self.layer1(x)
@@ -48,19 +51,15 @@ class FashionCNN(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         x, y = batch
-        model = FashionCNN()
-        logits = model(x)
-        loss = nn.CrossEntropyLoss(logits, y)
-        return pl.TrainResult(loss)
+        logits = self(x)
+        loss = nn.functional.cross_entropy(logits, y)
+        return loss
     
     def validation_step(self, batch, batch_idx):
         x, y, = batch
-        model = FashionCNN()
-        logits = model(x)
-        val_loss = nn.CrossEntropyLoss(logits, y)
-        result = pl.EvalResult()
-        result.log('val_loss', val_loss)
-        return result
+        logits = self(x)
+        val_loss = nn.functional.cross_entropy(logits, y)
+        self.log('val_loss', val_loss)
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=0.001)
